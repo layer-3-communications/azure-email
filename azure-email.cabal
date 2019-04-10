@@ -30,6 +30,7 @@ library
     , aeson
     , base64-bytestring
     , bytestring
+    , crypto-pubkey-openssh
     , cryptonite
     , exceptions
     , http-client
@@ -40,5 +41,6 @@ library
     , time
     , uuid
     , wreq
+    , aeson
   hs-source-dirs:      src
   default-language:    Haskell2010

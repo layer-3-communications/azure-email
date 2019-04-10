@@ -15,7 +15,8 @@ module Azure.Email
 
 import Codec.Crypto.RSA.Pure (PrivateKey)
 import Control.Monad.Catch (MonadThrow, Exception, throwM)
-import Data.Aeson ((.=),object)
+import Crypto.PubKey.OpenSsh (OpenSshPrivateKey(..), decodePrivate)
+import Data.Aeson (FromJSON,(.=),(.:),object)
 import Data.Aeson.Lens (_String,key)
 import Data.Function ((&))
 import Data.Functor (void)
@@ -132,7 +133,7 @@ fetchAzureToken mngr creds@(AzureCreds clientId tenantId fingerPrint privateKey)
   let opts = defaults & manager .~ Right mngr
   now <- getCurrentTime
   requestId <- UUID4.nextRandom
-  r <- postWith opts (Text.unpack (Text.concat ["https://login.microsoftonline.com/", uuidToText (azureTenantId creds), "/oatuh2/token"]))
+  r <- postWith opts (Text.unpack (Text.concat ["https://login.microsoftonline.com/", uuidToText (azureTenantId creds), "/oauth2/token"]))
          $ buildFormParams "https://outlook.office365.com/"
              privateKey
              fingerPrint
@@ -159,7 +160,7 @@ data AzureCreds = AzureCreds
   , azureTenantId    :: !UUID
   , azureFingerprint :: !Text
   , azurePrivateKey  :: !PrivateKey
-  }
+  } deriving (Eq,Show)
 
 fromRightErr :: String -> Either a b -> b
 fromRightErr err = \case
@@ -174,3 +175,24 @@ throwFromJust err = \case
 data MyException = MyException String
   deriving (Show, Eq)
 instance Exception MyException
+
+instance FromJSON AzureCreds where
+  parseJSON = \case
+    Aeson.Object o -> AzureCreds
+      <$> parseUUID o "client-id"
+      <*> parseUUID o "tenant-id"
+      <*> o .: "fingerprint"
+      <*> parsePrivateKey o "private-key"
+    _ -> fail "Failed decoding Frank.Types.AzureCreds: not a JSON object."
+    where
+      parseUUID o theKey = do
+        s <- o .: theKey
+        case UUID.fromString s of
+          Nothing -> fail $ "UUID " <> Text.unpack theKey <> " could not be parsed."
+          Just u -> pure u
+      parsePrivateKey o theKey = do
+        t <- o .: theKey
+        case decodePrivate (TextEncoding.encodeUtf8 t) of
+          Left err -> fail $ "Private key could not be parsed: " <> err
+          Right (OpenSshPrivateKeyDsa _ _) -> fail "Private key should be RSA, but a DSA key was found."
+          Right (OpenSshPrivateKeyRsa pk) -> pure pk
