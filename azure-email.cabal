@@ -2,9 +2,11 @@ cabal-version: 2.2
 name:
   azure-email
 version:
-  0.1.0.0
---synopsis:
---description:
+  0.1.1
+synopsis:
+  azure email api
+description:
+  Send emails using the Microsoft Azure API
 homepage:
   https://github.com/layer-3-communications/azure-email
 license:
@@ -13,7 +15,8 @@ author:
   layer-3-communications
 maintainer:
   dcartwright@layer3com.com
---copyright:
+copyright:
+  copyright (c) 2019 Layer 3 Communications, LLC.
 category:
   Web
 build-type:
@@ -25,9 +28,9 @@ library
   exposed-modules:
     Azure.Email
   build-depends:
-      base >=4.7 && <4.13
     , RSA
     , aeson
+    , base >=4.7 && <4.14
     , base64-bytestring
     , bytestring
     , crypto-pubkey-openssh
@@ -41,6 +44,7 @@ library
     , time
     , uuid
     , wreq
-    , aeson
-  hs-source-dirs:      src
-  default-language:    Haskell2010
+  hs-source-dirs:
+    src
+  default-language:
+    Haskell2010
